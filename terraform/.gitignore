@@ -1,0 +1,10 @@
+*.env
+# Terraform files
+**/*.tfvars
+**/.terraform/*
+**/terraform.tfstate*
+.terraform
+terraform.tfstate.backup
+*.tfstate
+*.tfstate.*
+crash.log
