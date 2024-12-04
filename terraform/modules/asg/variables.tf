@@ -19,3 +19,7 @@ variable "azs" {
   description = "availabilty zones"
   default = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
+
+variable "lb_target_group_arn" {
+  type = string
+}
