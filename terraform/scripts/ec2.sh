@@ -1,10 +1,14 @@
 #!/bin/bash
+
+# Wait for cloud-init
 cloud-init status --wait
 
-apt update -y
-apt upgrade -y
-sudo apt install nginx -y
+# Update and install nginx
+apt-get update -y
+DEBIAN_FRONTEND=noninteractive apt-get upgrade -y
+DEBIAN_FRONTEND=noninteractive apt-get install -y nginx
 
+# Create custom index page
 cat << 'EOF' > /var/www/html/index.html
 <!DOCTYPE html>
 <html>
@@ -26,5 +30,16 @@ cat << 'EOF' > /var/www/html/index.html
 </html>
 EOF
 
-sudo service nginx enable
-sudo service nginx restart
+# Enable and start nginx
+systemctl enable nginx
+systemctl start nginx
+
+# Verify nginx is running
+systemctl status nginx
+
+# Add a final check
+if curl -s localhost > /dev/null; then
+    echo "Nginx is responding correctly"
+else
+    echo "Nginx is not responding"
+fi
