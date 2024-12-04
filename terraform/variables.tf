@@ -12,3 +12,12 @@ variable "aws_profile" {
 variable "project_name" {
   type = string
 }
+
+variable "account-id" {
+  type = string
+}
+
+variable "notification_email" {
+  type        = string
+  description = "Email address for ASG notifications"
+}
