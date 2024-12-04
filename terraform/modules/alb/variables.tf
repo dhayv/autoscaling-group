@@ -10,3 +10,8 @@ variable "vpc_id" {
   type = string
 }
 
+
+variable "alb_security_groups_id" {
+  type = string
+}
+
