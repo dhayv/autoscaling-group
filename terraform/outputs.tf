@@ -1,7 +1,3 @@
-output "launch_template_id" {
-  value = module.launch_template.launch_template_id
-}
-
-output "launch_template_version" {
-  value = module.launch_template.launch_template_version
+output "alb_dns_name" {
+  value = module.alb.alb_dns_name
 }
