@@ -1,21 +1,7 @@
 # restrict outgoring traffic to alb onlyy
 resource "aws_security_group" "ec2" {
-  name_prefix = "${var.project_name}-ec2-"
+  name = "${var.project_name}-ec2-sg"
   vpc_id = var.vpc_id
-
-  ingress {
-    protocol  = "tcp"
-    from_port = 80
-    to_port   = 80
-    security_groups = [ aws_security_group.alb.id ]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
     Name = "${var.project_name}-ec2-sg"
@@ -26,25 +12,31 @@ resource "aws_security_group" "ec2" {
   }
 }
 
+resource "aws_security_group_rule" "allow_alb" {
+  type = "ingress"
+  security_group_id = aws_security_group.ec2.id
+  source_security_group_id = aws_security_group.alb.id
+  from_port         = 80
+  protocol       = "tcp"
+  to_port           = 80
+  
+}
+
+resource "aws_security_group_rule" "allow_ec2_egress" {
+  type = "egress"
+  security_group_id = aws_security_group.ec2.id
+  from_port         = 0
+  protocol       = "-1"
+  to_port           = 0
+  cidr_blocks = [ "0.0.0.0/0" ]
+}
+
+
+
 # allow traffic to internet
 resource "aws_security_group" "alb" {
-  name_prefix = "${var.project_name}-alb-"
+  name = "${var.project_name}-alb-sg"
   vpc_id = var.vpc_id
-
-  ingress {
-    protocol  = "tcp"
-    from_port = 80
-    to_port   = 80
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 
   tags = {
     Name = "${var.project_name}-ec2-alb"
@@ -55,6 +47,23 @@ resource "aws_security_group" "alb" {
   }
 }
 
+resource "aws_security_group_rule" "allow_alb_ingress" {
+  type = "ingress"
+  security_group_id = aws_security_group.alb.id
+  cidr_blocks         = ["0.0.0.0/0"]
+  from_port         = 80
+  protocol       = "tcp"
+  to_port           = 80
+}
+
+resource "aws_security_group_rule" "allow_alb_egress" {
+  type = "egress"
+  security_group_id = aws_security_group.alb.id
+  cidr_blocks          = ["0.0.0.0/0"]
+  to_port = 0
+  from_port = 0
+  protocol       = "-1" # semantically equivalent to all ports
+}
 
 data "aws_ami" "ubuntu" {
   most_recent = true
@@ -135,6 +144,12 @@ resource "aws_iam_instance_profile" "ec2_profile" {
 }
 
 
+# session manager 
+resource "aws_iam_role_policy_attachment" "ssm_policy" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
 resource "aws_iam_role_policy" "ec2_custom_policy" {
   name = "${var.project_name}-ec2-custom-policy"
   role = aws_iam_role.ec2_role.name
@@ -147,7 +162,12 @@ resource "aws_iam_role_policy" "ec2_custom_policy" {
         Action = [
           "elasticloadbalancing:Describe*",
           "elasticloadbalancing:DeregisterTargets",
-          "elasticloadbalancing:RegisterTargetsyes"
+          "elasticloadbalancing:RegisterTargets",
+          "ssm:UpdateInstanceInformation",
+          "ssm:ListInstanceAssociations",
+          "ssm:DescribeDocument",
+          "ssm:GetDocument",
+          "ssm:GetParameter"
         ]
         Resource = "*"
       },
@@ -162,4 +182,3 @@ resource "aws_iam_role_policy" "ec2_custom_policy" {
     ]
   })
 }
-
